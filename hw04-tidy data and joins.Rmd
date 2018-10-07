@@ -5,6 +5,7 @@ date: "7 Oktober 2018"
 output: github_document
 ---
 
+
 # Homework 04: Tidy data and joins
 
 ## Overview
@@ -36,6 +37,13 @@ This is a "choose your own adventure"-style assignment, where you are expected t
 
 It is fine to work with a new dataset and/or create variations on these problem themes.
 
+```{r, message=FALSE}
+library(gapminder)
+library(tidyverse)
+library(knitr)
+```
+
+
 ### Data Reshaping Prompts (and relationship to aggregation)
 
 __Problem__: You have data in one "shape" but you wish it were in another. Usually this is because the alternative shape is superior for presenting a table, making a figure, or doing aggregation and statistical analysis.
@@ -53,6 +61,34 @@ Activity #2
 * Make a tibble with one row per year and columns for life expectancy for two or more countries.
     - Use `knitr::kable()` to make this table look pretty in your rendered homework.
     - Take advantage of this new data shape to scatterplot life expectancy for one country against that of another.
+
+```{r}
+LE_C_Ge <- gapminder %>% 
+  group_by(year) %>% 
+  filter(country %in% c("Canada", "Germany")) %>% 
+  select(country, lifeExp, year)
+
+kable(head(LE_C_Ge))
+
+untidy_LE_C_Ge <- spread(LE_C_Ge, key="country", value=lifeExp)
+untidy_LE_C_Ge
+
+kable(untidy_LE_C_Ge, col.names = c("Year", "Canada", "Germany"))
+
+```
+
+This table shows the life expectancy in Canada in Germany per year.
+
+```{r}
+untidy_LE_C_Ge%>% 
+  ggplot(aes(Germany, Canada)) + 
+  geom_point(size=2, colour="purple") +
+  geom_smooth(method=lm, se=FALSE, size=0.5, colour="black") +
+  labs(title="Correlation of Life Expectancy in Germany vs. Canada")
+```
+
+Looks like there's a positive correlation between life expectancy in Canada and Germany.
+
 
 Activity #3
 
@@ -81,6 +117,53 @@ Activity #1
 * Create a second data frame, complementary to Gapminder. Join this with (part of) Gapminder using a `dplyr` join function and make some observations about the process and result. Explore the different types of joins. Examples of a second data frame you could build:
     - One row per country, a country variable and one or more variables with extra info, such as language spoken, NATO membership, national animal, or capitol city.
     - One row per continent, a continent variable and one or more variables with extra info, such as northern versus southern hemisphere.
+
+I had a look at the data sets included in R, using the `data() function` and found the `WorldPhones` data set which includes the number of phones in each continent in different years. 
+```{r}
+kable(WorldPhones)
+```
+
+Lets combine North America, South America and Mid America to one continent "Americas" as it is used in the gapminder data set
+
+```{r}
+new_WP <- WorldPhones %>% 
+  as.data.frame() %>% 
+  rownames_to_column("year") %>% 
+  mutate(Americas = N.Amer + S.Amer + Mid.Amer) %>% 
+  select(-N.Amer, -S.Amer, -Mid.Amer)
+
+new_WP
+```
+
+Let's make it tidy so that it's the same style as gapminder
+
+```{r}
+tidy_newWP <- 
+  new_WP %>% 
+  gather(key="continent", value="n_phones", Europe:Americas) 
+
+tidy_newWP$year <- as.integer(tidy_newWP$year)
+tidy_newWP$continent <- as.factor(tidy_newWP$continent)
+
+
+kable(tidy_newWP)
+```
+
+Let's select the GDP per capita data from gapminder per continent per year and add the phone data to that
+
+```{r}
+gdp_GM <-
+  gapminder %>% 
+  group_by(year, continent) %>% 
+  select(year, continent, gdpPercap)
+
+kable(head(gdp_GM))
+
+gdp_phone <- full_join(gdp_GM, tidy_newWP, by=c("year", "continent"))
+
+gdp_phone
+```
+
 
 Activity #2
 

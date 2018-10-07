@@ -37,6 +37,12 @@ This is a "choose your own adventure"-style assignment, where you are expected t
 
 It is fine to work with a new dataset and/or create variations on these problem themes.
 
+``` r
+library(gapminder)
+library(tidyverse)
+library(knitr)
+```
+
 ### Data Reshaping Prompts (and relationship to aggregation)
 
 **Problem**: You have data in one "shape" but you wish it were in another. Usually this is because the alternative shape is superior for presenting a table, making a figure, or doing aggregation and statistical analysis.
@@ -54,6 +60,79 @@ Activity \#2
 -   Make a tibble with one row per year and columns for life expectancy for two or more countries.
     -   Use `knitr::kable()` to make this table look pretty in your rendered homework.
     -   Take advantage of this new data shape to scatterplot life expectancy for one country against that of another.
+
+``` r
+LE_C_Ge <- gapminder %>% 
+  group_by(year) %>% 
+  filter(country %in% c("Canada", "Germany")) %>% 
+  select(country, lifeExp, year)
+
+kable(head(LE_C_Ge))
+```
+
+| country |  lifeExp|  year|
+|:--------|--------:|-----:|
+| Canada  |    68.75|  1952|
+| Canada  |    69.96|  1957|
+| Canada  |    71.30|  1962|
+| Canada  |    72.13|  1967|
+| Canada  |    72.88|  1972|
+| Canada  |    74.21|  1977|
+
+``` r
+untidy_LE_C_Ge <- spread(LE_C_Ge, key="country", value=lifeExp)
+untidy_LE_C_Ge
+```
+
+    ## # A tibble: 12 x 3
+    ## # Groups:   year [12]
+    ##     year Canada Germany
+    ##    <int>  <dbl>   <dbl>
+    ##  1  1952   68.8    67.5
+    ##  2  1957   70.0    69.1
+    ##  3  1962   71.3    70.3
+    ##  4  1967   72.1    70.8
+    ##  5  1972   72.9    71.0
+    ##  6  1977   74.2    72.5
+    ##  7  1982   75.8    73.8
+    ##  8  1987   76.9    74.8
+    ##  9  1992   78.0    76.1
+    ## 10  1997   78.6    77.3
+    ## 11  2002   79.8    78.7
+    ## 12  2007   80.7    79.4
+
+``` r
+kable(untidy_LE_C_Ge, col.names = c("Year", "Canada", "Germany"))
+```
+
+|  Year|  Canada|  Germany|
+|-----:|-------:|--------:|
+|  1952|  68.750|   67.500|
+|  1957|  69.960|   69.100|
+|  1962|  71.300|   70.300|
+|  1967|  72.130|   70.800|
+|  1972|  72.880|   71.000|
+|  1977|  74.210|   72.500|
+|  1982|  75.760|   73.800|
+|  1987|  76.860|   74.847|
+|  1992|  77.950|   76.070|
+|  1997|  78.610|   77.340|
+|  2002|  79.770|   78.670|
+|  2007|  80.653|   79.406|
+
+This table shows the life expectancy in Canada in Germany per year.
+
+``` r
+untidy_LE_C_Ge%>% 
+  ggplot(aes(Germany, Canada)) + 
+  geom_point(size=2, colour="purple") +
+  geom_smooth(method=lm, se=FALSE, size=0.5, colour="black") +
+  labs(title="Correlation of Life Expectancy in Germany vs. Canada")
+```
+
+![](hw04-tidy_data_and_joins_files/figure-markdown_github/unnamed-chunk-3-1.png)
+
+Looks like there's a positive correlation between life expectancy in Canada and Germany.
 
 Activity \#3
 
@@ -82,6 +161,137 @@ Activity \#1
 -   Create a second data frame, complementary to Gapminder. Join this with (part of) Gapminder using a `dplyr` join function and make some observations about the process and result. Explore the different types of joins. Examples of a second data frame you could build:
     -   One row per country, a country variable and one or more variables with extra info, such as language spoken, NATO membership, national animal, or capitol city.
     -   One row per continent, a continent variable and one or more variables with extra info, such as northern versus southern hemisphere.
+
+I had a look at the data sets included in R, using the `data() function` and found the `WorldPhones` data set which includes the number of phones in each continent in different years.
+
+``` r
+kable(WorldPhones)
+```
+
+|      |  N.Amer|  Europe|  Asia|  S.Amer|  Oceania|  Africa|  Mid.Amer|
+|------|-------:|-------:|-----:|-------:|--------:|-------:|---------:|
+| 1951 |   45939|   21574|  2876|    1815|     1646|      89|       555|
+| 1956 |   60423|   29990|  4708|    2568|     2366|    1411|       733|
+| 1957 |   64721|   32510|  5230|    2695|     2526|    1546|       773|
+| 1958 |   68484|   35218|  6662|    2845|     2691|    1663|       836|
+| 1959 |   71799|   37598|  6856|    3000|     2868|    1769|       911|
+| 1960 |   76036|   40341|  8220|    3145|     3054|    1905|      1008|
+| 1961 |   79831|   43173|  9053|    3338|     3224|    2005|      1076|
+
+Lets combine North America, South America and Mid America to one continent "Americas" as it is used in the gapminder data set
+
+``` r
+new_WP <- WorldPhones %>% 
+  as.data.frame() %>% 
+  rownames_to_column("year") %>% 
+  mutate(Americas = N.Amer + S.Amer + Mid.Amer) %>% 
+  select(-N.Amer, -S.Amer, -Mid.Amer)
+
+new_WP
+```
+
+    ##   year Europe Asia Oceania Africa Americas
+    ## 1 1951  21574 2876    1646     89    48309
+    ## 2 1956  29990 4708    2366   1411    63724
+    ## 3 1957  32510 5230    2526   1546    68189
+    ## 4 1958  35218 6662    2691   1663    72165
+    ## 5 1959  37598 6856    2868   1769    75710
+    ## 6 1960  40341 8220    3054   1905    80189
+    ## 7 1961  43173 9053    3224   2005    84245
+
+Let's make it tidy so that it's the same style as gapminder
+
+``` r
+tidy_newWP <- 
+  new_WP %>% 
+  gather(key="continent", value="n_phones", Europe:Americas) 
+
+tidy_newWP$year <- as.integer(tidy_newWP$year)
+tidy_newWP$continent <- as.factor(tidy_newWP$continent)
+
+
+kable(tidy_newWP)
+```
+
+|  year| continent |  n\_phones|
+|-----:|:----------|----------:|
+|  1951| Europe    |      21574|
+|  1956| Europe    |      29990|
+|  1957| Europe    |      32510|
+|  1958| Europe    |      35218|
+|  1959| Europe    |      37598|
+|  1960| Europe    |      40341|
+|  1961| Europe    |      43173|
+|  1951| Asia      |       2876|
+|  1956| Asia      |       4708|
+|  1957| Asia      |       5230|
+|  1958| Asia      |       6662|
+|  1959| Asia      |       6856|
+|  1960| Asia      |       8220|
+|  1961| Asia      |       9053|
+|  1951| Oceania   |       1646|
+|  1956| Oceania   |       2366|
+|  1957| Oceania   |       2526|
+|  1958| Oceania   |       2691|
+|  1959| Oceania   |       2868|
+|  1960| Oceania   |       3054|
+|  1961| Oceania   |       3224|
+|  1951| Africa    |         89|
+|  1956| Africa    |       1411|
+|  1957| Africa    |       1546|
+|  1958| Africa    |       1663|
+|  1959| Africa    |       1769|
+|  1960| Africa    |       1905|
+|  1961| Africa    |       2005|
+|  1951| Americas  |      48309|
+|  1956| Americas  |      63724|
+|  1957| Americas  |      68189|
+|  1958| Americas  |      72165|
+|  1959| Americas  |      75710|
+|  1960| Americas  |      80189|
+|  1961| Americas  |      84245|
+
+Let's select the GDP per capita data from gapminder per continent per year and add the phone data to that
+
+``` r
+gdp_GM <-
+  gapminder %>% 
+  group_by(year, continent) %>% 
+  select(year, continent, gdpPercap)
+
+kable(head(gdp_GM))
+```
+
+|  year| continent |  gdpPercap|
+|-----:|:----------|----------:|
+|  1952| Asia      |   779.4453|
+|  1957| Asia      |   820.8530|
+|  1962| Asia      |   853.1007|
+|  1967| Asia      |   836.1971|
+|  1972| Asia      |   739.9811|
+|  1977| Asia      |   786.1134|
+
+``` r
+gdp_phone <- full_join(gdp_GM, tidy_newWP, by=c("year", "continent"))
+
+gdp_phone
+```
+
+    ## # A tibble: 1,734 x 4
+    ## # Groups:   year, continent [?]
+    ##     year continent gdpPercap n_phones
+    ##    <int> <fct>         <dbl>    <dbl>
+    ##  1  1952 Asia           779.      NA 
+    ##  2  1957 Asia           821.    5230.
+    ##  3  1962 Asia           853.      NA 
+    ##  4  1967 Asia           836.      NA 
+    ##  5  1972 Asia           740.      NA 
+    ##  6  1977 Asia           786.      NA 
+    ##  7  1982 Asia           978.      NA 
+    ##  8  1987 Asia           852.      NA 
+    ##  9  1992 Asia           649.      NA 
+    ## 10  1997 Asia           635.      NA 
+    ## # ... with 1,724 more rows
 
 Activity \#2
 
