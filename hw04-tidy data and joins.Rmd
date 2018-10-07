@@ -155,14 +155,24 @@ Let's select the GDP per capita data from gapminder per continent per year and a
 gdp_GM <-
   gapminder %>% 
   group_by(year, continent) %>% 
-  select(year, continent, gdpPercap)
+  select(year, continent, gdpPercap) %>% 
+  filter(year=="1957")
+
+newWP_57 <- tidy_newWP %>% 
+  filter(year=="1957")
 
 kable(head(gdp_GM))
 
-gdp_phone <- full_join(gdp_GM, tidy_newWP, by=c("year", "continent"))
+gdp_phone <- full_join(gdp_GM, newWP_57, by= c("year", "continent"))
 
-gdp_phone
+kable(head(gdp_phone))
+
 ```
+
+```{r}
+
+```
+
 
 
 Activity #2

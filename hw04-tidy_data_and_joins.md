@@ -257,41 +257,38 @@ Let's select the GDP per capita data from gapminder per continent per year and a
 gdp_GM <-
   gapminder %>% 
   group_by(year, continent) %>% 
-  select(year, continent, gdpPercap)
+  select(year, continent, gdpPercap) %>% 
+  filter(year=="1957")
+
+newWP_57 <- tidy_newWP %>% 
+  filter(year=="1957")
 
 kable(head(gdp_GM))
 ```
 
 |  year| continent |  gdpPercap|
 |-----:|:----------|----------:|
-|  1952| Asia      |   779.4453|
-|  1957| Asia      |   820.8530|
-|  1962| Asia      |   853.1007|
-|  1967| Asia      |   836.1971|
-|  1972| Asia      |   739.9811|
-|  1977| Asia      |   786.1134|
+|  1957| Asia      |    820.853|
+|  1957| Europe    |   1942.284|
+|  1957| Africa    |   3013.976|
+|  1957| Africa    |   3827.940|
+|  1957| Americas  |   6856.856|
+|  1957| Oceania   |  10949.650|
 
 ``` r
-gdp_phone <- full_join(gdp_GM, tidy_newWP, by=c("year", "continent"))
+gdp_phone <- full_join(gdp_GM, newWP_57, by= c("year", "continent"))
 
-gdp_phone
+kable(head(gdp_phone))
 ```
 
-    ## # A tibble: 1,734 x 4
-    ## # Groups:   year, continent [?]
-    ##     year continent gdpPercap n_phones
-    ##    <int> <fct>         <dbl>    <dbl>
-    ##  1  1952 Asia           779.      NA 
-    ##  2  1957 Asia           821.    5230.
-    ##  3  1962 Asia           853.      NA 
-    ##  4  1967 Asia           836.      NA 
-    ##  5  1972 Asia           740.      NA 
-    ##  6  1977 Asia           786.      NA 
-    ##  7  1982 Asia           978.      NA 
-    ##  8  1987 Asia           852.      NA 
-    ##  9  1992 Asia           649.      NA 
-    ## 10  1997 Asia           635.      NA 
-    ## # ... with 1,724 more rows
+|  year| continent |  gdpPercap|  n\_phones|
+|-----:|:----------|----------:|----------:|
+|  1957| Asia      |    820.853|       5230|
+|  1957| Europe    |   1942.284|      32510|
+|  1957| Africa    |   3013.976|       1546|
+|  1957| Africa    |   3827.940|       1546|
+|  1957| Americas  |   6856.856|      68189|
+|  1957| Oceania   |  10949.650|       2526|
 
 Activity \#2
 
