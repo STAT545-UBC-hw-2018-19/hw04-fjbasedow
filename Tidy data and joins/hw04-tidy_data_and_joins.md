@@ -3,6 +3,11 @@ Homework 04: Tidy data and joins
 Frederike Basedow
 9 Oktober 2018
 
+The Assignment
+--------------
+
+This homework contains of two parts, a data reshaping exercise and a data joining exercise.
+
 Here are the packages that I will use for this homework:
 
 ``` r
