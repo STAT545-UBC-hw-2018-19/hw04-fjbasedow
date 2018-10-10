@@ -61,11 +61,13 @@ Activity \#2
     -   Use `knitr::kable()` to make this table look pretty in your rendered homework.
     -   Take advantage of this new data shape to scatterplot life expectancy for one country against that of another.
 
+I will first filter out the data from Germany and Canada in the `gapminder` data set.
+
 ``` r
-LE_C_Ge <- gapminder %>% 
-  group_by(year) %>% 
-  filter(country %in% c("Canada", "Germany")) %>% 
-  select(country, lifeExp, year)
+LE_C_Ge <- gapminder %>%
+  group_by(year) %>%
+  filter(country %in% c("Canada", "Germany")) %>%
+  select(country, lifeExp, year) # select only important columns
 
 kable(head(LE_C_Ge))
 ```
@@ -79,29 +81,11 @@ kable(head(LE_C_Ge))
 | Canada  |    72.88|  1972|
 | Canada  |    74.21|  1977|
 
-``` r
-untidy_LE_C_Ge <- spread(LE_C_Ge, key="country", value=lifeExp)
-untidy_LE_C_Ge
-```
-
-    ## # A tibble: 12 x 3
-    ## # Groups:   year [12]
-    ##     year Canada Germany
-    ##    <int>  <dbl>   <dbl>
-    ##  1  1952   68.8    67.5
-    ##  2  1957   70.0    69.1
-    ##  3  1962   71.3    70.3
-    ##  4  1967   72.1    70.8
-    ##  5  1972   72.9    71.0
-    ##  6  1977   74.2    72.5
-    ##  7  1982   75.8    73.8
-    ##  8  1987   76.9    74.8
-    ##  9  1992   78.0    76.1
-    ## 10  1997   78.6    77.3
-    ## 11  2002   79.8    78.7
-    ## 12  2007   80.7    79.4
+Next, I will `spread` this data so that it is easier to view in a table. I will make one column per country, which will contain the life expectancy data for that country:
 
 ``` r
+untidy_LE_C_Ge <- spread(LE_C_Ge, key = "country", value = lifeExp)
+
 kable(untidy_LE_C_Ge, col.names = c("Year", "Canada", "Germany"))
 ```
 
@@ -120,19 +104,37 @@ kable(untidy_LE_C_Ge, col.names = c("Year", "Canada", "Germany"))
 |  2002|  79.770|   78.670|
 |  2007|  80.653|   79.406|
 
-This table shows the life expectancy in Canada in Germany per year.
+This table shows the life expectancy in Canada in Germany per year. I will plot this in a scatter plot to see if there is a correlation in life expectany between Canada and Germany. I will play around with the `theme` options from `ggplot2` for practice.
 
 ``` r
-untidy_LE_C_Ge%>% 
-  ggplot(aes(Germany, Canada)) + 
-  geom_point(size=2, colour="purple") +
-  geom_smooth(method=lm, se=FALSE, size=0.5, colour="black") +
-  labs(title="Correlation of Life Expectancy in Germany vs. Canada")
+untidy_LE_C_Ge %>%
+  ggplot(aes(Germany, Canada)) +
+  geom_point(size = 2, colour = "orange") +
+  geom_smooth(method = lm, se = FALSE, size = 0.7, colour = "hotpink") +
+  labs(title = "Correlation of Life Expectancy in Germany vs. Canada") +
+  theme(panel.background = element_rect(fill = "white", 
+                                        colour = "grey40", 
+                                        size = 1),
+        panel.grid.major = element_line(colour = "grey80", 
+                                        size = 0.3), 
+        axis.text = element_text(colour = "grey40", 
+                                 size = 10), 
+        axis.ticks = element_line(size = 2, 
+                                  colour = "grey40"), 
+        axis.title.y = element_text(size = 12, 
+                                    colour = "grey40",
+                                    face = "bold"), 
+        axis.title.x = element_text(size = 12, 
+                                    colour = "grey40",
+                                    face = "bold"), 
+        plot.title = element_text(size = 15, 
+                                  colour = "grey20",
+                                  face = "bold"))
 ```
 
-![](hw04-tidy_data_and_joins_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](hw04-tidy_data_and_joins_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
-Looks like there's a positive correlation between life expectancy in Canada and Germany.
+Looks like there's a positive correlation in life expectancy between Canada and Germany.
 
 Activity \#3
 
@@ -162,7 +164,11 @@ Activity \#1
     -   One row per country, a country variable and one or more variables with extra info, such as language spoken, NATO membership, national animal, or capitol city.
     -   One row per continent, a continent variable and one or more variables with extra info, such as northern versus southern hemisphere.
 
-I had a look at the data sets included in R, using the `data() function` and found the `WorldPhones` data set which includes the number of phones in each continent in different years.
+I had a look at the data sets included in R, using the `data() function` and found the `WorldPhones` data set, which includes the number of phones in each continent in different years.
+
+It may be interesting to see if the number of phones is related to the population in each continent. To have a look at this, I will add the `WorldPhones` information to a subset of `gapminder` that includes the mean population in each continent per year.
+
+Let's have a look at the `WorldPhones` data set first:
 
 ``` r
 kable(WorldPhones)
@@ -178,117 +184,329 @@ kable(WorldPhones)
 | 1960 |   76036|   40341|  8220|    3145|     3054|    1905|      1008|
 | 1961 |   79831|   43173|  9053|    3338|     3224|    2005|      1076|
 
-Lets combine North America, South America and Mid America to one continent "Americas" as it is used in the gapminder data set
-
 ``` r
-new_WP <- WorldPhones %>% 
-  as.data.frame() %>% 
-  rownames_to_column("year") %>% 
-  mutate(Americas = N.Amer + S.Amer + Mid.Amer) %>% 
-  select(-N.Amer, -S.Amer, -Mid.Amer)
-
-new_WP
+class(WorldPhones)
 ```
 
-    ##   year Europe Asia Oceania Africa Americas
-    ## 1 1951  21574 2876    1646     89    48309
-    ## 2 1956  29990 4708    2366   1411    63724
-    ## 3 1957  32510 5230    2526   1546    68189
-    ## 4 1958  35218 6662    2691   1663    72165
-    ## 5 1959  37598 6856    2868   1769    75710
-    ## 6 1960  40341 8220    3054   1905    80189
-    ## 7 1961  43173 9053    3224   2005    84245
+    ## [1] "matrix"
 
-Let's make it tidy so that it's the same style as gapminder
+First, I will have to get `WorldPhones` ready for its merge with `gapminder`. It is a matrix, which is hard to work with, so I will change it into a data frame. The years are currently rownames, so I will make them a column, as they are in `gapminder`. Finally, I will combine North America, South America and Middle America to one continent "Americas" as it is used in the gapminder data set.
+
+``` r
+new_WP <- WorldPhones %>%
+  as.data.frame() %>% 
+  rownames_to_column("year") %>%
+  mutate(Americas = N.Amer + S.Amer + Mid.Amer) %>% 
+  select(-N.Amer, -S.Amer, -Mid.Amer) # deselect the orginal columns
+
+kable(new_WP, col.names = c("Year", names(new_WP[2:6]))) # change column name of "year" column to "Year" for presentation with kable
+```
+
+| Year |  Europe|  Asia|  Oceania|  Africa|  Americas|
+|:-----|-------:|-----:|--------:|-------:|---------:|
+| 1951 |   21574|  2876|     1646|      89|     48309|
+| 1956 |   29990|  4708|     2366|    1411|     63724|
+| 1957 |   32510|  5230|     2526|    1546|     68189|
+| 1958 |   35218|  6662|     2691|    1663|     72165|
+| 1959 |   37598|  6856|     2868|    1769|     75710|
+| 1960 |   40341|  8220|     3054|    1905|     80189|
+| 1961 |   43173|  9053|     3224|    2005|     84245|
+
+Let's make it tidy so that it's the same style as `gapminder`. Instead of having one column per continent, we need one column that contains the different continents and one with the number of phones. We can use the `gather` function for that:
 
 ``` r
 tidy_newWP <- 
   new_WP %>% 
-  gather(key="continent", value="n_phones", Europe:Americas) 
+  gather(key="continent", value="n_phones", Europe:Americas) # if I don't specify which columns are part of the "key", the years will be taken as continents, too.
 
-tidy_newWP$year <- as.integer(tidy_newWP$year)
+kable(head(tidy_newWP, 10))
+```
+
+| year | continent |  n\_phones|
+|:-----|:----------|----------:|
+| 1951 | Europe    |      21574|
+| 1956 | Europe    |      29990|
+| 1957 | Europe    |      32510|
+| 1958 | Europe    |      35218|
+| 1959 | Europe    |      37598|
+| 1960 | Europe    |      40341|
+| 1961 | Europe    |      43173|
+| 1951 | Asia      |       2876|
+| 1956 | Asia      |       4708|
+| 1957 | Asia      |       5230|
+
+Now we're almost ready to join, but there is still one problem. In order to join `tidy_newWP` with `gapminder`, the joining variables need to be the same type in the two data sets. I want to join by `year` and `continent` so let's check if these are the same in `gapminder` in my `tidy_newWP`.
+
+``` r
+class(gapminder$year) == class(tidy_newWP$year)
+```
+
+    ## [1] FALSE
+
+``` r
+class(gapminder$continent) == class(tidy_newWP$continent)
+```
+
+    ## [1] FALSE
+
+They are not the same in the two data sets. Let's see of what class they are:
+
+``` r
+class(gapminder$year)
+```
+
+    ## [1] "integer"
+
+``` r
+class(tidy_newWP$year)
+```
+
+    ## [1] "character"
+
+``` r
+class(gapminder$continent)
+```
+
+    ## [1] "factor"
+
+``` r
+class(tidy_newWP$continent)
+```
+
+    ## [1] "character"
+
+The `year` variable in `gapminder` is of the class integer and the `continent` variable is a factor, while both variables in `tidy_newWP` are characters. Let's adjust `tidy_newWP` so that the variable class matches the one in `gapminder`.
+
+``` r
+tidy_newWP$year <- as.integer(tidy_newWP$year) 
 tidy_newWP$continent <- as.factor(tidy_newWP$continent)
 
+class(gapminder$year) == class(tidy_newWP$year)
+```
 
-kable(tidy_newWP)
+    ## [1] TRUE
+
+``` r
+class(gapminder$continent) == class(tidy_newWP$continent)
+```
+
+    ## [1] TRUE
+
+Great, now the `WorldPhones` data is ready to join! First, I will calculate the average population per continent per year in `gapminder`, which is what I want to combine with the `WorldPhones` data.
+
+``` r
+pop_GM <-
+  gapminder %>%
+  group_by(year, continent) %>%
+  summarize(mean_pop = mean(pop))
+
+kable(head(pop_GM, 10))
+```
+
+|  year| continent |  mean\_pop|
+|-----:|:----------|----------:|
+|  1952| Africa    |    4570010|
+|  1952| Americas  |   13806098|
+|  1952| Asia      |   42283556|
+|  1952| Europe    |   13937362|
+|  1952| Oceania   |    5343003|
+|  1957| Africa    |    5093033|
+|  1957| Americas  |   15478157|
+|  1957| Asia      |   47356988|
+|  1957| Europe    |   14596345|
+|  1957| Oceania   |    5970988|
+
+Let's finally try to add the `WorldPhones` data to that! I will start with a `full_join` that combines all data from both data sets. I will join the data sets by both year and continent.
+
+``` r
+pop_phone <- full_join(pop_GM, tidy_newWP, by = c("year", "continent"))
+
+kable(head(pop_phone, 10)) # show first ten rows
+```
+
+|  year| continent |  mean\_pop|  n\_phones|
+|-----:|:----------|----------:|----------:|
+|  1952| Africa    |    4570010|         NA|
+|  1952| Americas  |   13806098|         NA|
+|  1952| Asia      |   42283556|         NA|
+|  1952| Europe    |   13937362|         NA|
+|  1952| Oceania   |    5343003|         NA|
+|  1957| Africa    |    5093033|       1546|
+|  1957| Americas  |   15478157|      68189|
+|  1957| Asia      |   47356988|       5230|
+|  1957| Europe    |   14596345|      32510|
+|  1957| Oceania   |    5970988|       2526|
+
+``` r
+kable(tail(pop_phone, 10)) # show last ten rows
+```
+
+|  year| continent |  mean\_pop|  n\_phones|
+|-----:|:----------|----------:|----------:|
+|  1958| Africa    |         NA|       1663|
+|  1959| Africa    |         NA|       1769|
+|  1960| Africa    |         NA|       1905|
+|  1961| Africa    |         NA|       2005|
+|  1951| Americas  |         NA|      48309|
+|  1956| Americas  |         NA|      63724|
+|  1958| Americas  |         NA|      72165|
+|  1959| Americas  |         NA|      75710|
+|  1960| Americas  |         NA|      80189|
+|  1961| Americas  |         NA|      84245|
+
+Printing the ten first and last rows, we can see that there are a lot of missing values in both the `mean_pop` columns and the `n_phones` columnn. This is because `full_join` keeps all levels of both the `year` and `continent` variable, but only one of the years actually overlaps between the two data sets, as you can see here:
+
+``` r
+intersect(gapminder$year, tidy_newWP$year)
+```
+
+    ## [1] 1957
+
+Only year 1957 is present in both data sets. Let's join the data sets with only the data that is present in both. We can use the `inner_join` function for that.
+
+``` r
+pop_phone_inner <- inner_join(pop_GM, tidy_newWP, by = c("year", "continent"))
+
+kable(pop_phone_inner)
+```
+
+|  year| continent |  mean\_pop|  n\_phones|
+|-----:|:----------|----------:|----------:|
+|  1957| Africa    |    5093033|       1546|
+|  1957| Americas  |   15478157|      68189|
+|  1957| Asia      |   47356988|       5230|
+|  1957| Europe    |   14596345|      32510|
+|  1957| Oceania   |    5970988|       2526|
+
+Now we have a short data frame that only contains the population and number of phones data from 1957 in each continent.
+
+We can also figure out which data is the same in the two data sets by using the filtering join `semi_join`.
+
+``` r
+pop_phone_semi <- semi_join(pop_GM, tidy_newWP, by = c("year", "continent"))
+
+kable(pop_phone_semi)
+```
+
+|  year| continent |  mean\_pop|
+|-----:|:----------|----------:|
+|  1957| Africa    |    5093033|
+|  1957| Americas  |   15478157|
+|  1957| Asia      |   47356988|
+|  1957| Europe    |   14596345|
+|  1957| Oceania   |    5970988|
+
+We can see that only data from year 1957 is kept, but the n\_phones data from `tidy_newWP` is not added. If we flip around the order in which the data sets are entered we also only get data from 1957, but the gapminder-specific data is lacking:
+
+``` r
+pop_phone_semi2 <- semi_join(tidy_newWP, pop_GM, by = c("year", "continent"))
+
+kable(pop_phone_semi2)
+```
+
+|  year| continent |  n\_phones|
+|-----:|:----------|----------:|
+|  1957| Europe    |      32510|
+|  1957| Asia      |       5230|
+|  1957| Oceania   |       2526|
+|  1957| Africa    |       1546|
+|  1957| Americas  |      68189|
+
+We can also use `anti-join` to see which data is not overlapping, for example if we want to look at the number of phones in the years that are not included in gapminder:
+
+``` r
+pop_phone_anti <- anti_join(tidy_newWP, pop_GM, by = c("year", "continent"))
+
+kable(head(pop_phone_anti))
 ```
 
 |  year| continent |  n\_phones|
 |-----:|:----------|----------:|
 |  1951| Europe    |      21574|
 |  1956| Europe    |      29990|
-|  1957| Europe    |      32510|
 |  1958| Europe    |      35218|
 |  1959| Europe    |      37598|
 |  1960| Europe    |      40341|
 |  1961| Europe    |      43173|
-|  1951| Asia      |       2876|
-|  1956| Asia      |       4708|
-|  1957| Asia      |       5230|
-|  1958| Asia      |       6662|
-|  1959| Asia      |       6856|
-|  1960| Asia      |       8220|
-|  1961| Asia      |       9053|
-|  1951| Oceania   |       1646|
-|  1956| Oceania   |       2366|
-|  1957| Oceania   |       2526|
-|  1958| Oceania   |       2691|
-|  1959| Oceania   |       2868|
-|  1960| Oceania   |       3054|
-|  1961| Oceania   |       3224|
-|  1951| Africa    |         89|
-|  1956| Africa    |       1411|
-|  1957| Africa    |       1546|
-|  1958| Africa    |       1663|
-|  1959| Africa    |       1769|
-|  1960| Africa    |       1905|
-|  1961| Africa    |       2005|
-|  1951| Americas  |      48309|
-|  1956| Americas  |      63724|
-|  1957| Americas  |      68189|
-|  1958| Americas  |      72165|
-|  1959| Americas  |      75710|
-|  1960| Americas  |      80189|
-|  1961| Americas  |      84245|
 
-Let's select the GDP per capita data from gapminder per continent per year and add the phone data to that
+To try out all different joining options, I will use `left_join` and `right_join` next. `left_join` will only join the rows of `tidy_newWP` to `pop_GM` that are matching (if used in the order below).
 
 ``` r
-gdp_GM <-
-  gapminder %>% 
-  group_by(year, continent) %>% 
-  select(year, continent, gdpPercap) %>% 
-  filter(year=="1957")
+pop_phone_left <- left_join(pop_GM, tidy_newWP, by = c("year", "continent"))
 
-newWP_57 <- tidy_newWP %>% 
-  filter(year=="1957")
-
-kable(head(gdp_GM))
+kable(head(pop_phone_left, 20))
 ```
 
-|  year| continent |  gdpPercap|
-|-----:|:----------|----------:|
-|  1957| Asia      |    820.853|
-|  1957| Europe    |   1942.284|
-|  1957| Africa    |   3013.976|
-|  1957| Africa    |   3827.940|
-|  1957| Americas  |   6856.856|
-|  1957| Oceania   |  10949.650|
-
-``` r
-gdp_phone <- full_join(gdp_GM, newWP_57, by= c("year", "continent"))
-
-kable(head(gdp_phone))
-```
-
-|  year| continent |  gdpPercap|  n\_phones|
+|  year| continent |  mean\_pop|  n\_phones|
 |-----:|:----------|----------:|----------:|
-|  1957| Asia      |    820.853|       5230|
-|  1957| Europe    |   1942.284|      32510|
-|  1957| Africa    |   3013.976|       1546|
-|  1957| Africa    |   3827.940|       1546|
-|  1957| Americas  |   6856.856|      68189|
-|  1957| Oceania   |  10949.650|       2526|
+|  1952| Africa    |    4570010|         NA|
+|  1952| Americas  |   13806098|         NA|
+|  1952| Asia      |   42283556|         NA|
+|  1952| Europe    |   13937362|         NA|
+|  1952| Oceania   |    5343003|         NA|
+|  1957| Africa    |    5093033|       1546|
+|  1957| Americas  |   15478157|      68189|
+|  1957| Asia      |   47356988|       5230|
+|  1957| Europe    |   14596345|      32510|
+|  1957| Oceania   |    5970988|       2526|
+|  1962| Africa    |    5702247|         NA|
+|  1962| Americas  |   17330810|         NA|
+|  1962| Asia      |   51404763|         NA|
+|  1962| Europe    |   15345172|         NA|
+|  1962| Oceania   |    6641759|         NA|
+|  1967| Africa    |    6447875|         NA|
+|  1967| Americas  |   19229865|         NA|
+|  1967| Asia      |   57747361|         NA|
+|  1967| Europe    |   16039299|         NA|
+|  1967| Oceania   |    7300207|         NA|
+
+Similar to that is `right_join` which will only join rows of `pop_GM` that are matching in `tidy_newWP` (if used in the order below).
+
+``` r
+pop_phone_right <- right_join(pop_GM, tidy_newWP, by = c("year", "continent"))
+
+kable(head(pop_phone_right, 20))
+```
+
+|  year| continent |  mean\_pop|  n\_phones|
+|-----:|:----------|----------:|----------:|
+|  1951| Europe    |         NA|      21574|
+|  1956| Europe    |         NA|      29990|
+|  1957| Europe    |   14596345|      32510|
+|  1958| Europe    |         NA|      35218|
+|  1959| Europe    |         NA|      37598|
+|  1960| Europe    |         NA|      40341|
+|  1961| Europe    |         NA|      43173|
+|  1951| Asia      |         NA|       2876|
+|  1956| Asia      |         NA|       4708|
+|  1957| Asia      |   47356988|       5230|
+|  1958| Asia      |         NA|       6662|
+|  1959| Asia      |         NA|       6856|
+|  1960| Asia      |         NA|       8220|
+|  1961| Asia      |         NA|       9053|
+|  1951| Oceania   |         NA|       1646|
+|  1956| Oceania   |         NA|       2366|
+|  1957| Oceania   |    5970988|       2526|
+|  1958| Oceania   |         NA|       2691|
+|  1959| Oceania   |         NA|       2868|
+|  1960| Oceania   |         NA|       3054|
+
+To comparethe population with number of phones, the `pop_phone_inner` output seems most useful. I will use it to plot mean population vs. number of phones. Note, that I could also use the output from `full_join`, `left_join`, or `right_join`.
+
+``` r
+pop_phone_inner %>%  
+  ggplot(aes(mean_pop, n_phones, colour = continent)) +
+  geom_point(size = 3) +
+  labs(title = "Number of Phones vs. Mean Population in 1957", 
+       x = "Mean population", 
+       y = "Number of Phones", 
+       colour = "Continent:") +
+  theme(legend.position = "bottom")
+```
+
+![](hw04-tidy_data_and_joins_files/figure-markdown_github/unnamed-chunk-20-1.png)
+
+It looks like there is a higher number of phones in countries with higher population when looking at Africa, the Americas, Europe and Oceania, but Asia has a relatively low number of phones for its big population. However, we only have 5 independent values here and cannot draw any conclusions about a possible correlation. If we had numbers from different years we could see if the number of phones increases with an increasing population over time.
 
 Activity \#2
 
